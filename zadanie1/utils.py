@@ -1,20 +1,7 @@
 from allowedData import *
-
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
 import pandas as pd
-
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from torch.utils.data import TensorDataset, DataLoader
-
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
-
+import torch
 
 def checkForCuda():
     """
@@ -77,6 +64,7 @@ def removeOutliers(loadedData, column, lowerThreshold=None, upperThreshold=None,
     count_removed = (~mask).sum()
 
     if showInfo:
+        # True: keep, False: removed
         removed_rows = loadedData.index[~mask]
         for i in removed_rows:
             print(f"Removed outlier at row {i}, column '{column}': {loadedData.at[i, column]}")
@@ -152,7 +140,7 @@ def removeOutliersWrapper(dataUncleaned, showInfo=False):
         Cleaned data
     """
     columnsToClean = [
-        ('age', {'lowerThreshold': 17, 'upperThreshold': 100}),
+        ('age', {'lowerThreshold': 18, 'upperThreshold': 100}),
         ('job', {'allowedValues': allowedJobs}),
         ('marital', {'allowedValues': allowedMarital}),
         ('education', {'allowedValues': allowedEducation}),
@@ -221,206 +209,3 @@ def getDataCount(dataToCount, showInfo=False):
     if showInfo:
         print(f"Dataset has [{rows}] rows and [{cols}] columns.")
     return rows, cols
-
-
-def drawConfusionMatrix(usedModel, dataloader, title="Confusion Matrix"):
-    """
-    Draws a confusion matrix with clear green-red indication for correctness
-    and a legend showing the number of samples.
-    Args:
-        usedModel (nn.Module): trained PyTorch model
-        dataloader (DataLoader): dataset to evaluate
-        title (str): plot title
-    """
-    usedModel.eval()
-
-    allPredictionValues = []
-    allRealValues = []
-
-    with torch.no_grad():
-        for xb, yb in dataloader:
-            preds = usedModel(xb)
-            predicted = torch.argmax(preds, dim=1)
-
-            allPredictionValues.extend(predicted.cpu().numpy())
-            allRealValues.extend(yb.cpu().numpy())
-
-    cm = confusion_matrix(allRealValues, allPredictionValues)
-
-    fig, ax = plt.subplots(figsize=(6, 6))
-
-    color_matrix = np.zeros_like(cm, dtype=float)
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            if i == j:
-                color_matrix[i, j] = cm[i, j]
-            else:
-                color_matrix[i, j] = -cm[i, j]
-
-    from matplotlib.colors import LinearSegmentedColormap
-    cmap = LinearSegmentedColormap.from_list("CMColorMap", ["#ff4d4d", "#ffffff", "#4dff4d"])
-
-    im = ax.imshow(color_matrix, interpolation='nearest', cmap=cmap)
-
-    cbar = fig.colorbar(im, ax=ax)
-    cbar.set_label("Number of samples (green=correct, red=incorrect)")
-
-    classes = ["Not Subscribed", "Subscribed"]
-    ax.set_xticks(np.arange(len(classes)))
-    ax.set_yticks(np.arange(len(classes)))
-    ax.set_xticklabels(classes)
-    ax.set_yticklabels(classes)
-    ax.set_xlabel("Predicted values")
-    ax.set_ylabel("True values")
-    ax.set_title(title)
-
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(
-                j, i, cm[i, j],
-                ha='center', va='center',
-                color='black', fontsize=12, fontweight='bold'
-            )
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plotColumnHistograms(df, bins=50, showInfo=True):
-    """
-    Plot histograms for all numeric columns to visualize extremes.
-
-    Args:
-        df (pd.DataFrame): Dataset
-        bins (int): Number of bins in histogram
-        showInfo (bool): Whether to print debug info
-    """
-    numericColumns = df.select_dtypes(include=['int64', 'float64']).columns
-
-    for col in numericColumns:
-        plt.figure(figsize=(8, 4))
-        plt.hist(df[col], bins=bins, color='skyblue', edgecolor='black')
-        plt.title(f"Histogram of '{col}'")
-        plt.xlabel(col)
-        plt.ylabel("Frequency")
-        plt.grid(True, linestyle='--', alpha=0.5)
-        plt.tight_layout()
-        plt.show()
-
-        if showInfo:
-            print(f"Plotted histogram for column '{col}'")
-
-
-class MLP(nn.Module):
-    def __init__(self):
-        super().__init__()
-        input_dim = X_train.shape[1]
-
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 16),
-            nn.ReLU(),
-            nn.Linear(16, 12),
-            nn.ReLU(),
-            nn.Linear(12, 8),
-            nn.ReLU(),
-            nn.Linear(8, 4),
-            nn.ReLU(),
-            nn.Linear(4, 2),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-
-if __name__ == '__main__':
-    checkForCuda()
-
-    data = loadDataset("zadanie1-data.csv", showInfo=False)
-
-    if data is None:
-        print(f"\nData not loaded, exiting...")
-        exit(1)
-
-    data = removeColumn(data, "duration", showInfo=True)
-    data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=True)
-    data = removeOutliersWrapper(data, showInfo=True)
-
-    #plotColumnHistograms(data, bins=50, showInfo=True)
-
-    dataRows, dataColumns = getDataCount(data, showInfo=True)
-
-    x, y = preprocessDataset(data, showInfo=True)
-
-    scaler = StandardScaler()
-    X = scaler.fit_transform(x)
-
-    #plotColumnHistograms(pd.DataFrame(X, columns=x.columns), bins=50, showInfo=True)
-
-    X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.1, random_state=42, stratify=y
-    )
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.4, random_state=42, stratify=y_temp
-    )
-
-    X_train = torch.tensor(X_train, dtype=torch.float32)
-    X_val = torch.tensor(X_val, dtype=torch.float32)
-    X_test = torch.tensor(X_test, dtype=torch.float32)
-    y_train = torch.tensor(y_train.values, dtype=torch.long)
-    y_val = torch.tensor(y_val.values, dtype=torch.long)
-    y_test = torch.tensor(y_test.values, dtype=torch.long)
-
-    unique, counts = np.unique(y_train, return_counts=True)
-    print(dict(zip(unique, counts)))
-
-    exit(2)
-
-    train_ds = TensorDataset(X_train, y_train)
-    val_ds = TensorDataset(X_val, y_val)
-    test_ds = TensorDataset(X_test, y_test)
-
-    train_dl = DataLoader(train_ds, batch_size=32, shuffle=True)
-    val_dl = DataLoader(val_ds, batch_size=32)  # SHUFFLE FALSE LEBO VALIDACNE
-    test_dl = DataLoader(test_ds, batch_size=32)  # SHUFLLE FALSE LEBO TESTOVACIE
-
-    model = MLP()
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
-
-    for epoch in range(50):
-        model.train()
-        for xb, yb in train_dl:
-            optimizer.zero_grad()
-            preds = model(xb)
-            loss = criterion(preds, yb)
-            loss.backward()
-            optimizer.step()
-
-        model.eval()
-        correct, total = 0, 0
-        with torch.no_grad():
-            for xb, yb in val_dl:
-                preds = model(xb)
-                predicted = torch.argmax(preds, dim=1)
-                correct += (predicted == yb).sum().item()
-                total += yb.size(0)
-
-        val_acc = correct / total
-        print(f"Epoch {epoch + 1}, Train Loss: {loss.item():.4f}, Val Acc: {val_acc:.2f}")
-
-    model.eval()
-    correct, total = 0, 0
-    with torch.no_grad():
-        for xb, yb in test_dl:
-            preds = model(xb)
-            predicted = torch.argmax(preds, dim=1)
-            correct += (predicted == yb).sum().item()
-            total += yb.size(0)
-
-    test_acc = correct / total
-    print(f"\nFinal Test Accuracy: {test_acc:.2f}")
-    drawConfusionMatrix(model, test_dl, title="Test Set")
-    drawConfusionMatrix(model, train_dl, title="Train Set")
-    drawConfusionMatrix(model, val_dl, title="Validation Set")
-
