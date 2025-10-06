@@ -1,14 +1,19 @@
 from allowedData import *
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-import torch
 
-def checkForCuda():
-    """
-    Checks for torch version and whether CUDA is available
-    """
-    print("Torch version:", torch.__version__)
-    print("Device:", "cuda" if torch.cuda.is_available() else "cpu")
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+import pandas as pd
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import TensorDataset, DataLoader
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 
 
 def loadDataset(csvPath, showInfo=False):
@@ -64,7 +69,6 @@ def removeOutliers(loadedData, column, lowerThreshold=None, upperThreshold=None,
     count_removed = (~mask).sum()
 
     if showInfo:
-        # True: keep, False: removed
         removed_rows = loadedData.index[~mask]
         for i in removed_rows:
             print(f"Removed outlier at row {i}, column '{column}': {loadedData.at[i, column]}")
@@ -140,7 +144,7 @@ def removeOutliersWrapper(dataUncleaned, showInfo=False):
         Cleaned data
     """
     columnsToClean = [
-        ('age', {'lowerThreshold': 18, 'upperThreshold': 100}),
+        ('age', {'lowerThreshold': 17, 'upperThreshold': 100}),
         ('job', {'allowedValues': allowedJobs}),
         ('marital', {'allowedValues': allowedMarital}),
         ('education', {'allowedValues': allowedEducation}),
@@ -201,7 +205,6 @@ def getDataCount(dataToCount, showInfo=False):
     Args:
         dataToCount (pd.DataFrame): Dataset
         showInfo (bool): Print debug info
-
     Returns:
         tuple: (num_rows, num_columns)
     """
