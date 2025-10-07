@@ -14,22 +14,32 @@ if __name__ == '__main__':
         print("\nData not loaded, exiting...")
         exit(1)
 
-    data = removeColumn(data, "duration", showInfo=True)
-    data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=True)
-    data = removeOutliersWrapper(data, showInfo=True)
+    showDatasetOverview(data, showInfo=True)
+    showCorrelationMatrix(data, showInfo=False)
+
+    numericColumns = ['age', 'duration', 'campaign', 'pdays', 'previous', 'emp.var.rate', 'cons.price.idx',
+                      'cons.conf.idx', 'euribor3m', 'nr.employed']
+    showBoxplotWrapper(data, numericColumns, showInfo=False)
+
+    categoricalColumns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome']
+    showCategoricalWrapper(data, categoricalColumns, showInfo=False)
+
+    data = removeColumn(data, "duration", showInfo=False)
+    data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=False)
+    data = removeOutliersWrapper(data, showInfo=False)
 
     # plotColumnHistograms(data, bins=50, showInfo=True)
 
-    x, y = preprocessDataset(data, showInfo=True)
+    x, y = preprocessDataset(data, showInfo=False)
 
     scaler = StandardScaler()
     X = scaler.fit_transform(x)
 
     X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.3, random_state=42, stratify=y
+        X, y, test_size=0.1, random_state=42, stratify=y
     )
     X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.2, random_state=42, stratify=y_temp
+        X_temp, y_temp, test_size=0.4, random_state=42, stratify=y_temp
     )
 
     model = LogisticRegression(max_iter=1000, solver='lbfgs')

@@ -3,6 +3,8 @@ import torch.nn as nn
 
 from torch.utils.data import TensorDataset, DataLoader
 
+import seaborn as sns
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
@@ -59,7 +61,6 @@ def drawConfusionMatrix(y_true, y_pred, title="Confusion Matrix"):
 def plotColumnHistograms(df, bins=50, showInfo=True):
     """
     Plot histograms for all numeric columns to visualize extremes.
-
     Args:
         df (pd.DataFrame): Dataset
         bins (int): Number of bins in histogram
@@ -79,3 +80,102 @@ def plotColumnHistograms(df, bins=50, showInfo=True):
 
         if showInfo:
             print(f"Plotted histogram for column '{col}'")
+
+
+def showCorrelationMatrix(dataFrame, showInfo=False):
+    """
+    Prints correlation matrix for numeric columns
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+        showInfo (bool): Whether to display the matrix
+    """
+    if showInfo:
+        corr = dataFrame.corr(numeric_only=True)
+        sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
+        plt.title("Correlation Matrix for numeric columns")
+        plt.show()
+
+
+def showBoxplot(dataFrame, column, showInfo=False):
+    """
+    Plots a boxplot for the specified numeric column.
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+        column (str): Name of column to plot
+        showInfo (bool): Whether to display the plot
+    """
+    if showInfo:
+        plt.figure(figsize=(6, 4))
+        sns.boxplot(x=dataFrame[column])
+        plt.title(f"Boxplot for {column}")
+        plt.show()
+
+
+def showBoxplotWrapper(dataFrame, columns, showInfo=False):
+    """
+    Draws boxplots for selected columns.
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+        columns (list): List of column names
+        showInfo (bool): Whether to show debug info
+    """
+    if showInfo:
+        for column in columns:
+            if column in dataFrame.columns:
+                showBoxplot(dataFrame, column, showInfo)
+
+            else:
+                if showInfo:
+                    print(f"Column '{column}' does not exist, skipping...")
+
+
+def showBarChart(dataFrame, column, showInfo=False):
+    """
+    Plots a bar chart for the specified categorical column.
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+        column (str): Name of column to plot
+        showInfo (bool): Whether to display the plot
+    """
+    if showInfo:
+        plt.figure(figsize=(8, 4))
+        dataFrame[column].value_counts().plot(kind='bar', color='skyblue', edgecolor='black')
+        plt.title(f"Bar Chart for {column}")
+        plt.ylabel("Count")
+        plt.tight_layout()
+        plt.show()
+
+
+def showPieChart(dataFrame, column, showInfo=False):
+    """
+    Plots a pie chart for column.
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+        column (str): Column name
+        showInfo (bool): Whether to display the plot
+    """
+    if showInfo:
+        plt.figure(figsize=(6, 6))
+        dataFrame[column].value_counts().plot(kind='pie', autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
+        plt.title(f"Pie Chart for {column}")
+        plt.ylabel("")  # Hide default y-label
+        plt.tight_layout()
+        plt.show()
+
+
+def showCategoricalWrapper(dataFrame, columns, showInfo=False):
+    """
+    Draws bar and pie charts for selected columns.
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+        columns (list): List of column names
+        showInfo (bool): Whether to show debug info
+    """
+    if showInfo:
+        for column in columns:
+            if column in dataFrame.columns:
+                showBarChart(dataFrame, column, showInfo)
+                showPieChart(dataFrame, column, showInfo)
+            else:
+                if showInfo:
+                    print(f"Column '{column}' does not exist, skipping...")

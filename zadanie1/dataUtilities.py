@@ -212,3 +212,39 @@ def getDataCount(dataToCount, showInfo=False):
     if showInfo:
         print(f"Dataset has [{rows}] rows and [{cols}] columns.")
     return rows, cols
+
+
+def showDatasetOverview(dataFrame, showInfo=False):
+    """
+    Prints a concise overview of dataset.
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+    """
+    if showInfo:
+        print("\nDATASET OVERVIEW")
+        print(f"Rows: {dataFrame.shape[0]}, Columns: {dataFrame.shape[1]}")
+
+        print("\nCOLUMNS")
+        for i, col in enumerate(dataFrame.columns, start=1):
+            print(f"[{i}] {col}")
+
+        print("\nCOLUMN DETAILS")
+        overview = []
+        for col in dataFrame.columns:
+            overview.append({
+                "Column": col,
+                "Type": dataFrame[col].dtype,
+                "Missing": dataFrame[col].isna().sum(),
+                "Unique": dataFrame[col].nunique(),
+                "Sample": dataFrame[col].iloc[0] if dataFrame.shape[0] > 0 else None
+            })
+
+        import pandas as pd
+        overview_df = pd.DataFrame(overview)
+        print(overview_df.to_string(index=False))
+
+        print("\nBASIC STATS (NUMERIC)")
+        print(dataFrame.describe().T[["mean", "std", "min", "max"]])
+
+        print("\nDUPLICATES")
+        print(f"Duplicate rows: {dataFrame.duplicated().sum()}")
