@@ -25,18 +25,23 @@ if __name__ == '__main__':
                           'day_of_week', 'poutcome', 'subscribed']
     showCategoricalWrapper(data, categoricalColumns, showInfo=False)
 
-    showHistogramWrapper(data, numericColumns, showInfo=True)
+    showHistogramWrapper(data, numericColumns, showInfo=False)
 
     data = removeColumn(data, "duration", showInfo=False)
     data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=False)
     data = removeOutliersWrapper(data, showInfo=False)
 
-    # plotColumnHistograms(data, bins=50, showInfo=True)
-
     x, y = preprocessDataset(data, showInfo=False)
+
+    # # # histograms after scaling
+    # currentColumns = x.columns
 
     scaler = StandardScaler()
     X = scaler.fit_transform(x)
+
+    # # # histograms after scaling
+    # X_df = pd.DataFrame(X, columns=currentColumns)
+    # showHistogramWrapper(X_df, currentColumns, showInfo=True)
 
     X_train, X_temp, y_train, y_temp = train_test_split(
         X, y, test_size=0.1, random_state=42, stratify=y

@@ -69,7 +69,7 @@ def showHistogram(dataFrame, column, bins=50, showInfo=False):
     """
     if showInfo:
         plt.figure(figsize=(8, 4))
-        plt.hist(dataFrame[column], bins=bins, color='skyblue', edgecolor='black')
+        plt.hist(dataFrame[column], bins=bins, color="skyblue", edgecolor="black")
         plt.title(f"Histogram for {column}")
         plt.xlabel(column)
         plt.ylabel("Frequency")
@@ -89,7 +89,7 @@ def showHistogramWrapper(dataFrame, columns=None, bins=50, showInfo=False):
     """
     if showInfo:
         if columns is None:
-            columns = dataFrame.select_dtypes(include=['int64', 'float64']).columns
+            columns = dataFrame.select_dtypes(include=["int64", "float64"]).columns
 
         for column in columns:
             if column in dataFrame.columns:
@@ -141,21 +141,20 @@ def showBoxplotWrapper(dataFrame, columns, showInfo=False):
                 showBoxplot(dataFrame, column, showInfo)
 
             else:
-                if showInfo:
-                    print(f"Column '{column}' does not exist, skipping...")
+                print(f"Column '{column}' does not exist, skipping...")
 
 
 def showBarChart(dataFrame, column, showInfo=False):
     """
-    Plots a bar chart for the specified categorical column.
+    Plots a bar chart for column.
     Args:
         dataFrame (pd.DataFrame): Dataset
-        column (str): Name of column to plot
+        column (str): Column name
         showInfo (bool): Whether to display the plot
     """
     if showInfo:
         plt.figure(figsize=(8, 4))
-        dataFrame[column].value_counts().plot(kind='bar', color='skyblue', edgecolor='black')
+        dataFrame[column].value_counts().plot(kind="bar", color="skyblue", edgecolor="black")
         plt.title(f"Bar Chart for {column}")
         plt.ylabel("Count")
         plt.tight_layout()
@@ -172,7 +171,7 @@ def showPieChart(dataFrame, column, showInfo=False):
     """
     if showInfo:
         plt.figure(figsize=(6, 6))
-        dataFrame[column].value_counts().plot(kind='pie', autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
+        dataFrame[column].value_counts().plot(kind="pie", autopct="%1.1f%%", startangle=90, colors=plt.cm.Paired.colors)
         plt.title(f"Pie Chart for {column}")
         plt.ylabel("")  # Hide default y-label
         plt.tight_layout()
@@ -193,5 +192,4 @@ def showCategoricalWrapper(dataFrame, columns, showInfo=False):
                 showBarChart(dataFrame, column, showInfo)
                 showPieChart(dataFrame, column, showInfo)
             else:
-                if showInfo:
-                    print(f"Column '{column}' does not exist, skipping...")
+                print(f"Column '{column}' does not exist, skipping...")
