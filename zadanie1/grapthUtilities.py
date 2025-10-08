@@ -58,28 +58,44 @@ def drawConfusionMatrix(y_true, y_pred, title="Confusion Matrix"):
     plt.show()
 
 
-def plotColumnHistograms(df, bins=50, showInfo=True):
+def showHistogram(dataFrame, column, bins=50, showInfo=False):
     """
-    Plot histograms for all numeric columns to visualize extremes.
+    Plots a histogram for column.
     Args:
-        df (pd.DataFrame): Dataset
-        bins (int): Number of bins in histogram
-        showInfo (bool): Whether to print debug info
+        dataFrame (pd.DataFrame): Dataset
+        column (str): Column name
+        bins (int): Number of bins
+        showInfo (bool): Whether to show debug info
     """
-    numericColumns = df.select_dtypes(include=['int64', 'float64']).columns
-
-    for col in numericColumns:
+    if showInfo:
         plt.figure(figsize=(8, 4))
-        plt.hist(df[col], bins=bins, color='skyblue', edgecolor='black')
-        plt.title(f"Histogram of '{col}'")
-        plt.xlabel(col)
+        plt.hist(dataFrame[column], bins=bins, color='skyblue', edgecolor='black')
+        plt.title(f"Histogram for {column}")
+        plt.xlabel(column)
         plt.ylabel("Frequency")
         plt.grid(True, linestyle='--', alpha=0.5)
         plt.tight_layout()
         plt.show()
 
-        if showInfo:
-            print(f"Plotted histogram for column '{col}'")
+
+def showHistogramWrapper(dataFrame, columns=None, bins=50, showInfo=False):
+    """
+    Draws histograms for specified columns
+    Args:
+        dataFrame (pd.DataFrame): Dataset
+        columns (list or None): List of columns
+        bins (int): Number of bins
+        showInfo (bool): Whether to show debug info
+    """
+    if showInfo:
+        if columns is None:
+            columns = dataFrame.select_dtypes(include=['int64', 'float64']).columns
+
+        for column in columns:
+            if column in dataFrame.columns:
+                showHistogram(dataFrame, column, bins=bins, showInfo=showInfo)
+            else:
+                print(f"Column '{column}' does not exist, skipping...")
 
 
 def showCorrelationMatrix(dataFrame, showInfo=False):

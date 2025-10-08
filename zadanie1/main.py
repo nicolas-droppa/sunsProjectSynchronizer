@@ -21,8 +21,11 @@ if __name__ == '__main__':
                       'cons.conf.idx', 'euribor3m', 'nr.employed']
     showBoxplotWrapper(data, numericColumns, showInfo=False)
 
-    categoricalColumns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome']
+    categoricalColumns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month',
+                          'day_of_week', 'poutcome', 'subscribed']
     showCategoricalWrapper(data, categoricalColumns, showInfo=False)
+
+    showHistogramWrapper(data, numericColumns, showInfo=True)
 
     data = removeColumn(data, "duration", showInfo=False)
     data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=False)
@@ -42,8 +45,8 @@ if __name__ == '__main__':
         X_temp, y_temp, test_size=0.4, random_state=42, stratify=y_temp
     )
 
-    model = LogisticRegression(max_iter=1000, solver='lbfgs')
-    # model = LogisticRegression(max_iter=1000, solver='lbfgs', class_weight='balanced')
+    model = LogisticRegression(max_iter=1000, solver="lbfgs")
+    # model = LogisticRegression(max_iter=1000, solver="lbfgs", class_weight='balanced')
     model.fit(X_train, y_train)
 
     val_preds = model.predict(X_val)
