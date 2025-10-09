@@ -91,7 +91,8 @@ def preprocessDataset(loadedData, showInfo=False):
     y = loadedData['subscribed'].copy()
     y = y.map({'no': 0, 'yes': 1})
 
-    x = loadedData.drop(columns=['subscribed'])
+    #x = loadedData.drop(columns=['subscribed'])
+    x = loadedData
 
     columns = x.select_dtypes(include=['object']).columns
     for column in columns:

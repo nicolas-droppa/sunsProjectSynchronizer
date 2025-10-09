@@ -15,7 +15,13 @@ if __name__ == '__main__':
         exit(1)
 
     showDatasetOverview(data, showInfo=True)
-    showCorrelationMatrix(data, showInfo=False)
+    showCorrelationMatrix(data, showInfo=True)
+
+    #showDependencyGraph(data, "job", "duration", agg="mean")
+    #showBoxRelation(data, "emp.var.rate", "euribor3m")
+    #showScatterRelation(data, "emp.var.rate", "nr.employed", hue="subscribed")
+    #showHeatmapRelation(data, "emp.var.rate", "cons.price.idx")
+    #showLineRelation(data, "emp.var.rate", "pdays", agg="mean")
 
     numericColumns = ['age', 'duration', 'campaign', 'pdays', 'previous', 'emp.var.rate', 'cons.price.idx',
                       'cons.conf.idx', 'euribor3m', 'nr.employed']
@@ -27,7 +33,7 @@ if __name__ == '__main__':
 
     showHistogramWrapper(data, numericColumns, showInfo=False)
 
-    data = removeColumn(data, "duration", showInfo=False)
+    #data = removeColumn(data, "duration", showInfo=False)
     data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=False)
     data = removeOutliersWrapper(data, showInfo=False)
 
@@ -38,6 +44,8 @@ if __name__ == '__main__':
 
     scaler = StandardScaler()
     X = scaler.fit_transform(x)
+
+    #showCorrelationMatrix(data, showInfo=True)
 
     # # # histograms after scaling
     # X_df = pd.DataFrame(X, columns=currentColumns)
