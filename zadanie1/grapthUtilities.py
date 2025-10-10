@@ -269,3 +269,24 @@ def showLineRelation(data, column1, column2, agg="mean"):
     plt.ylabel(f"{agg.capitalize()} of {column2}")
     plt.tight_layout()
     plt.show()
+
+
+def showTrainingValidationLoss(trainLosses, validationLosses, showInfo=True):
+    """
+    Plots the train and validation loss graph
+    Args:
+        trainLosses (list or np.ndarray): List of training losses
+        validationLosses (list or np.ndarray): List of validation losses
+        showInfo (bool): Whether to display the plot
+    """
+    if showInfo:
+        plt.figure(figsize=(8, 5))
+        plt.plot(trainLosses, label="Training Loss", linewidth=1)
+        plt.plot(validationLosses, label="Validation Loss", linewidth=1)
+        plt.title("Training vs Validation Loss graph")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.tight_layout()
+        plt.show()

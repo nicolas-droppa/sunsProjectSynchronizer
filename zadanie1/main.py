@@ -108,28 +108,44 @@ if __name__ == '__main__':
     model = MLP(X_train.shape[1])
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    trainLosses = []
+    validationLosses = []
 
     for epoch in range(100):
         model.train()
+        totalTrainLoss = 0
         for xb, yb in train_dl:
             optimizer.zero_grad()
             preds = model(xb)
             loss = criterion(preds, yb)
             loss.backward()
             optimizer.step()
+            totalTrainLoss += loss.item()
+
+        avgTrainLoss = totalTrainLoss / len(train_dl)
+        trainLosses.append(avgTrainLoss)
 
         model.eval()
+        totalValidationLoss = 0
         correct, total = 0, 0
         with torch.no_grad():
             for xb, yb in val_dl:
                 preds = model(xb)
+                loss = criterion(preds, yb)
+                totalValidationLoss += loss.item()
                 predicted = torch.argmax(preds, dim=1)
                 correct += (predicted == yb).sum().item()
                 total += yb.size(0)
 
+        avgValidationLoss = totalValidationLoss / len(val_dl)
+        validationLosses.append(avgValidationLoss)
+
         val_acc = correct / total
         print(f"Epoch {epoch + 1}, Train Loss: {loss.item():.4f}, Val Acc: {val_acc:.2f}")
+
+    showTrainingValidationLoss(trainLosses, validationLosses)
 
     model.eval()
     correct, total = 0, 0
