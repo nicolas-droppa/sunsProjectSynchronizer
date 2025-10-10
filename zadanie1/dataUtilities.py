@@ -306,3 +306,28 @@ def removeOutliersIQRWrapper(data, columns, k=1.5, showInfo=False):
         data = removeOutliersIQR(data, col, k=k, showInfo=showInfo)
 
     return data
+
+
+def getPredictionsAndLabels(model, dataloader):
+    """
+    Generates predictions and true labels from model
+    Args:
+        model (torch.nn.Module): Trained PyTorch model
+        dataloader (torch.utils.data.DataLoader): DataLoader providing batches of (inputs, labels)
+    Returns:
+        tuple: (numpy.ndarray, numpy.ndarray)
+            y_true - true labels
+            y_pred - predicted labels
+    """
+    all_preds = []
+    all_labels = []
+
+    model.eval()
+    with torch.no_grad():
+        for xb, yb in dataloader:
+            preds = model(xb)
+            predicted = torch.argmax(preds, dim=1)
+            all_preds.extend(predicted.numpy())
+            all_labels.extend(yb.numpy())
+
+    return np.array(all_labels), np.array(all_preds)

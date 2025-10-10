@@ -11,9 +11,11 @@ class MLP(nn.Module):
             nn.ReLU(),
             nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(128, 4),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(4, 2),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 2),
         )
 
     def forward(self, x):

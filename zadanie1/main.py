@@ -59,7 +59,7 @@ if __name__ == '__main__':
         X, y, test_size=0.9, random_state=42, stratify=y
     )
     X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.4, random_state=42, stratify=y_temp
+        X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
     )
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 
-    for epoch in range(50):
+    for epoch in range(100):
         model.train()
         for xb, yb in train_dl:
             optimizer.zero_grad()
@@ -142,5 +142,9 @@ if __name__ == '__main__':
 
     test_acc = correct / total
     print(f"\nFinal Test Accuracy: {test_acc:.2f}")
-    drawConfusionMatrix(model, test_dl, title="Test Set")
-    drawConfusionMatrix(model, train_dl, title="Train Set")
+
+    y_test_true, y_test_pred = getPredictionsAndLabels(model, test_dl)
+    y_train_true, y_train_pred = getPredictionsAndLabels(model, train_dl)
+
+    drawConfusionMatrix(y_test_true, y_test_pred, title="Test Set")
+    drawConfusionMatrix(y_train_true, y_train_pred, title="Train Set")
