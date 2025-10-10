@@ -1,6 +1,7 @@
 from dataUtilities import *
 from grapthUtilities import *
 from utilities import *
+from neuralNetwork import MLP
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -15,7 +16,7 @@ if __name__ == '__main__':
         exit(1)
 
     showDatasetOverview(data, showInfo=True)
-    showCorrelationMatrix(data, showInfo=True)
+    showCorrelationMatrix(data, showInfo=False)
 
     #showDependencyGraph(data, "job", "duration", agg="mean")
     #showBoxRelation(data, "emp.var.rate", "euribor3m")
@@ -55,12 +56,16 @@ if __name__ == '__main__':
     # showHistogramWrapper(X_df, currentColumns, showInfo=True)
 
     X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.1, random_state=42, stratify=y
+        X, y, test_size=0.9, random_state=42, stratify=y
     )
     X_val, X_test, y_val, y_test = train_test_split(
         X_temp, y_temp, test_size=0.4, random_state=42, stratify=y_temp
     )
 
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    #                       SKLEARN MODEL                       #
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    """
     model = LogisticRegression(max_iter=1000, solver="lbfgs")
     # model = LogisticRegression(max_iter=1000, solver="lbfgs", class_weight='balanced')
     model.fit(X_train, y_train)
@@ -79,3 +84,63 @@ if __name__ == '__main__':
 
     drawConfusionMatrix(y_test, test_preds, title="Test Set")
     drawConfusionMatrix(y_train, train_preds, title="Train Set")
+    """
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    #                     PERCEPTRON MODEL                      #
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+    X_train = torch.tensor(X_train, dtype=torch.float32)
+    X_val = torch.tensor(X_val, dtype=torch.float32)
+    X_test = torch.tensor(X_test, dtype=torch.float32)
+    y_train = torch.tensor(y_train.values, dtype=torch.long)
+    y_val = torch.tensor(y_val.values, dtype=torch.long)
+    y_test = torch.tensor(y_test.values, dtype=torch.long)
+
+    train_ds = TensorDataset(X_train, y_train)
+    val_ds = TensorDataset(X_val, y_val)
+    test_ds = TensorDataset(X_test, y_test)
+
+    train_dl = DataLoader(train_ds, batch_size=32, shuffle=True)
+    val_dl = DataLoader(val_ds, batch_size=32)  # SHUFFLE FALSE LEBO VALIDACNE
+    test_dl = DataLoader(test_ds, batch_size=32)  # SHUFLLE FALSE LEBO TESTOVACIE
+
+    model = MLP(X_train.shape[1])
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+    for epoch in range(50):
+        model.train()
+        for xb, yb in train_dl:
+            optimizer.zero_grad()
+            preds = model(xb)
+            loss = criterion(preds, yb)
+            loss.backward()
+            optimizer.step()
+
+        model.eval()
+        correct, total = 0, 0
+        with torch.no_grad():
+            for xb, yb in val_dl:
+                preds = model(xb)
+                predicted = torch.argmax(preds, dim=1)
+                correct += (predicted == yb).sum().item()
+                total += yb.size(0)
+
+        val_acc = correct / total
+        print(f"Epoch {epoch + 1}, Train Loss: {loss.item():.4f}, Val Acc: {val_acc:.2f}")
+
+    model.eval()
+    correct, total = 0, 0
+    with torch.no_grad():
+        for xb, yb in test_dl:
+            preds = model(xb)
+            predicted = torch.argmax(preds, dim=1)
+            correct += (predicted == yb).sum().item()
+            total += yb.size(0)
+
+    test_acc = correct / total
+    print(f"\nFinal Test Accuracy: {test_acc:.2f}")
+    drawConfusionMatrix(model, test_dl, title="Test Set")
+    drawConfusionMatrix(model, train_dl, title="Train Set")
