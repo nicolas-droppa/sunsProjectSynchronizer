@@ -91,8 +91,8 @@ def preprocessDataset(loadedData, showInfo=False):
     y = loadedData['subscribed'].copy()
     y = y.map({'no': 0, 'yes': 1})
 
-    #x = loadedData.drop(columns=['subscribed'])
-    x = loadedData
+    x = loadedData.drop(columns=['subscribed'])
+    #x = loadedData
 
     columns = x.select_dtypes(include=['object']).columns
     for column in columns:
@@ -249,3 +249,60 @@ def showDatasetOverview(dataFrame, showInfo=False):
 
         print("\nDUPLICATES")
         print(f"Duplicate rows: {dataFrame.duplicated().sum()}")
+
+
+def removeOutliersIQR(data, column, k=1.5, showInfo=False):
+    """
+    Removes outliers from column with IQR.
+    Args:
+        data (pd.DataFrame): Dataset
+        column (str): Column to check for outliers
+        k (float): Multiplier for IQR (default 1.5)
+        showInfo (bool): Prints removed values and count
+    Returns:
+        pd.DataFrame: DataFrame with outliers removed
+    """
+    if column not in data.columns:
+        if showInfo:
+            print(f"Column '{column}' does not exist, skipping...")
+        return data
+
+    if not np.issubdtype(data[column].dtype, np.number):
+        if showInfo:
+            print(f"Column '{column}' is not numeric, skipping IQR outlier removal.")
+        return data
+
+    Q1 = data[column].quantile(0.25)
+    Q3 = data[column].quantile(0.75)
+    IQR = Q3 - Q1
+
+    lower_bound = Q1 - k * IQR
+    upper_bound = Q3 + k * IQR
+
+    mask = (data[column] >= lower_bound) & (data[column] <= upper_bound)
+    count_removed = (~mask).sum()
+
+    if showInfo:
+        removed_rows = data.index[~mask]
+        for i in removed_rows:
+            print(f"Removed outlier at row {i}, column '{column}': {data.at[i, column]}")
+        print(f"Total outliers removed in column '{column}' using IQR: {count_removed}")
+
+    return data[mask].copy()
+
+
+def removeOutliersIQRWrapper(data, columns, k=1.5, showInfo=False):
+    """
+    Wrapper to remove outliers for columns using IQR.
+    Args:
+        data (pd.DataFrame): Dataset
+        columns (list, optional): List of columns to clean
+        k (float): Multiplier for IQR (default 1.5)
+        showInfo (bool): Print debug info
+    Returns:
+        pd.DataFrame: Cleaned data
+    """
+    for col in columns:
+        data = removeOutliersIQR(data, col, k=k, showInfo=showInfo)
+
+    return data

@@ -33,9 +33,12 @@ if __name__ == '__main__':
 
     showHistogramWrapper(data, numericColumns, showInfo=False)
 
-    #data = removeColumn(data, "duration", showInfo=False)
+    data = removeColumn(data, "duration", showInfo=False)
+    data = removeColumn(data, "nr.employed", showInfo=False)
     data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=False)
     data = removeOutliersWrapper(data, showInfo=False)
+    #data = removeOutliersIQRWrapper(data, numericColumns, showInfo=False)
+    data = removeOutliersIQR(data, "cons.price.idx", showInfo=False)
 
     x, y = preprocessDataset(data, showInfo=False)
 
