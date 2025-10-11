@@ -113,6 +113,10 @@ if __name__ == '__main__':
     trainLosses = []
     validationLosses = []
 
+    earlyStoppingPatience = 15
+    bestValidationLoss = float("inf")
+    epochsWithNoImprovement = 0
+
     for epoch in range(100):
         model.train()
         totalTrainLoss = 0
@@ -141,9 +145,23 @@ if __name__ == '__main__':
 
         avgValidationLoss = totalValidationLoss / len(val_dl)
         validationLosses.append(avgValidationLoss)
-
         val_acc = correct / total
-        print(f"Epoch {epoch + 1}, Train Loss: {loss.item():.4f}, Val Acc: {val_acc:.2f}")
+
+        print(f"Epoch {epoch + 1}, Train Loss: {avgTrainLoss:.4f}, Val Acc: {val_acc:.2f}")
+
+        # --------------------------- #
+        #        EARLY STOPPING       #
+        # --------------------------- #
+        if avgValidationLoss < bestValidationLoss:
+            bestValidationLoss = avgValidationLoss
+            epochsWithNoImprovement = 0
+            bestModelState = model.state_dict()
+        else:
+            epochsWithNoImprovement = epochsWithNoImprovement + 1
+            if epochsWithNoImprovement >= earlyStoppingPatience:
+                print(f"\nEarly stopping after {epoch + 1} epochs!")
+                model.load_state_dict(bestModelState)
+                break
 
     showTrainingValidationLoss(trainLosses, validationLosses)
 
