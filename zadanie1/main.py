@@ -15,7 +15,7 @@ if __name__ == '__main__':
         print("\nData not loaded, exiting...")
         exit(1)
 
-    showDatasetOverview(data, showInfo=True)
+    showDatasetOverview(data, showInfo=False)
     showCorrelationMatrix(data, showInfo=False)
 
     #showDependencyGraph(data, "job", "duration", agg="mean")
@@ -45,8 +45,8 @@ if __name__ == '__main__':
 
     # # # histograms after scaling
     # currentColumns = x.columns
-
-    scaler = StandardScaler()
+    """
+    scaler = StandardScaler()+
     X = scaler.fit_transform(x)
 
     #showCorrelationMatrix(data, showInfo=True)
@@ -56,11 +56,22 @@ if __name__ == '__main__':
     # showHistogramWrapper(X_df, currentColumns, showInfo=True)
 
     X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.9, random_state=42, stratify=y
+        X, y, test_size=0.3, random_state=42, stratify=y    
     )
     X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
+        X_temp, y_temp, test_size=0.2, random_state=42, stratify=y_temp
     )
+    """
+
+    x_train, x_temp, y_train, y_temp = train_test_split(x, y, test_size=0.2, stratify=y,
+                                                        random_state=42)
+    x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.4, stratify=y_temp,
+                                                    random_state=42)
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(x_train)
+    X_val = scaler.transform(x_val)
+    X_test = scaler.transform(x_test)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     #                       SKLEARN MODEL                       #
@@ -101,9 +112,10 @@ if __name__ == '__main__':
     val_ds = TensorDataset(X_val, y_val)
     test_ds = TensorDataset(X_test, y_test)
 
-    train_dl = DataLoader(train_ds, batch_size=32, shuffle=True)
-    val_dl = DataLoader(val_ds, batch_size=32)  # SHUFFLE FALSE LEBO VALIDACNE
-    test_dl = DataLoader(test_ds, batch_size=32)  # SHUFLLE FALSE LEBO TESTOVACIE
+    batchSize = 16
+    train_dl = DataLoader(train_ds, batch_size=batchSize, shuffle=True)
+    val_dl = DataLoader(val_ds, batch_size=batchSize)  # SHUFFLE FALSE LEBO VALIDACNE
+    test_dl = DataLoader(test_ds, batch_size=batchSize)  # SHUFLLE FALSE LEBO TESTOVACIE
 
     model = MLP(X_train.shape[1])
 
@@ -112,14 +124,17 @@ if __name__ == '__main__':
 
     trainLosses = []
     validationLosses = []
+    trainAccuracies = []
+    validationAccuracies = []
 
-    earlyStoppingPatience = 15
+    earlyStoppingPatience = 25
     bestValidationLoss = float("inf")
     epochsWithNoImprovement = 0
 
-    for epoch in range(100):
+    for epoch in range(200):
         model.train()
         totalTrainLoss = 0
+        correctTrain, totalTrain = 0, 0
         for xb, yb in train_dl:
             optimizer.zero_grad()
             preds = model(xb)
@@ -128,24 +143,30 @@ if __name__ == '__main__':
             optimizer.step()
             totalTrainLoss += loss.item()
 
+            predicted = torch.argmax(preds, dim=1)
+            correctTrain += (predicted == yb).sum().item()
+            totalTrain += yb.size(0)
+
         avgTrainLoss = totalTrainLoss / len(train_dl)
         trainLosses.append(avgTrainLoss)
+        trainAccuracies.append(correctTrain / totalTrain)
 
         model.eval()
         totalValidationLoss = 0
-        correct, total = 0, 0
+        correctValidation, totalValidation = 0, 0
         with torch.no_grad():
             for xb, yb in val_dl:
                 preds = model(xb)
                 loss = criterion(preds, yb)
                 totalValidationLoss += loss.item()
                 predicted = torch.argmax(preds, dim=1)
-                correct += (predicted == yb).sum().item()
-                total += yb.size(0)
+                correctValidation += (predicted == yb).sum().item()
+                totalValidation += yb.size(0)
 
         avgValidationLoss = totalValidationLoss / len(val_dl)
         validationLosses.append(avgValidationLoss)
-        val_acc = correct / total
+        val_acc = correctValidation / totalValidation
+        validationAccuracies.append(val_acc)
 
         print(f"Epoch {epoch + 1}, Train Loss: {avgTrainLoss:.4f}, Val Acc: {val_acc:.2f}")
 
@@ -163,19 +184,31 @@ if __name__ == '__main__':
                 model.load_state_dict(bestModelState)
                 break
 
+    showTrainingValidationAccuracy(trainAccuracies, validationAccuracies)
     showTrainingValidationLoss(trainLosses, validationLosses)
 
     model.eval()
-    correct, total = 0, 0
+
+    correct_train, total_train = 0, 0
+    with torch.no_grad():
+        for xb, yb in train_dl:
+            preds = model(xb)
+            predicted = torch.argmax(preds, dim=1)
+            correct_train += (predicted == yb).sum().item()
+            total_train += yb.size(0)
+    train_acc = correct_train / total_train
+
+    correct, total_test = 0, 0
     with torch.no_grad():
         for xb, yb in test_dl:
             preds = model(xb)
             predicted = torch.argmax(preds, dim=1)
             correct += (predicted == yb).sum().item()
-            total += yb.size(0)
+            total_test += yb.size(0)
+    test_acc = correct / total_test
 
-    test_acc = correct / total
-    print(f"\nFinal Test Accuracy: {test_acc:.2f}")
+    print(f"\nFinal Train Accuracy: {train_acc:.3f}")
+    print(f"\nFinal Test Accuracy: {test_acc:.3f}")
 
     y_test_true, y_test_pred = getPredictionsAndLabels(model, test_dl)
     y_train_true, y_train_pred = getPredictionsAndLabels(model, train_dl)

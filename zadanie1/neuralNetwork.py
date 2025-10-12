@@ -5,13 +5,17 @@ class MLP(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 512),
+            nn.Linear(input_dim, 32),
             nn.ReLU(),
-            nn.Linear(512, 128),
+            nn.Linear(32, 16),
             nn.ReLU(),
-            nn.Linear(128, 32),
+            nn.Linear(16, 8),
             nn.ReLU(),
-            nn.Linear(32, 2),
+            nn.Linear(8, 4),
+            nn.ReLU(),
+            nn.Linear(4, 3),
+            nn.ReLU(),
+            nn.Linear(3, 2),
         )
 
     def forward(self, x):

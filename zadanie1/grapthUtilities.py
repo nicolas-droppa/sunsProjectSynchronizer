@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
+from matplotlib.colors import LinearSegmentedColormap
 
 
 def drawConfusionMatrix(y_true, y_pred, title="Confusion Matrix"):
@@ -100,15 +101,29 @@ def showHistogramWrapper(dataFrame, columns=None, bins=50, showInfo=False):
 
 def showCorrelationMatrix(dataFrame, showInfo=False):
     """
-    Prints correlation matrix for numeric columns
+    Prints correlation matrix for numeric columns.
     Args:
         dataFrame (pd.DataFrame): Dataset
         showInfo (bool): Whether to display the matrix
     """
     if showInfo:
         corr = dataFrame.corr(numeric_only=True)
-        sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
-        plt.title("Correlation Matrix for numeric columns")
+        cmap = LinearSegmentedColormap.from_list("matrix_corr", ["red", "white", "green"])
+
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(
+            corr,
+            annot=True,
+            fmt=".2f",
+            cmap=cmap,
+            vmin=-1,
+            vmax=1,
+            center=0,
+            linewidths=0.5,
+            cbar_kws={"label": "Correlation Matrix"}
+        )
+        plt.title("Correlation Matrix for Numeric Columns")
+        plt.tight_layout()
         plt.show()
 
 
@@ -286,6 +301,27 @@ def showTrainingValidationLoss(trainLosses, validationLosses, showInfo=True):
         plt.title("Training vs Validation Loss graph")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.tight_layout()
+        plt.show()
+
+
+def showTrainingValidationAccuracy(trainAccuracies, validationAccuracies, showInfo=True):
+    """
+    Plots the train and validation accuracy graph
+    Args:
+        trainAccuracies (list or np.ndarray): List of training accuracies
+        validationAccuracies (list or np.ndarray): List of validation accuracies
+        showInfo (bool): Whether to display the plot
+    """
+    if showInfo:
+        plt.figure(figsize=(8, 5))
+        plt.plot(trainAccuracies, label="Training Accuracy", linewidth=1)
+        plt.plot(validationAccuracies, label="Validation Accuracy", linewidth=1)
+        plt.title("Training vs Validation Accuracy graph")
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
         plt.legend()
         plt.grid(True, linestyle="--", alpha=0.6)
         plt.tight_layout()
