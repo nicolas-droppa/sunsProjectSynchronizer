@@ -63,9 +63,9 @@ if __name__ == '__main__':
     )
     """
 
-    x_train, x_temp, y_train, y_temp = train_test_split(x, y, test_size=0.2, stratify=y,
+    x_train, x_temp, y_train, y_temp = train_test_split(x, y, test_size=0.1, stratify=y,
                                                         random_state=42)
-    x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.4, stratify=y_temp,
+    x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.3, stratify=y_temp,
                                                     random_state=42)
 
     scaler = StandardScaler()
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     val_ds = TensorDataset(X_val, y_val)
     test_ds = TensorDataset(X_test, y_test)
 
-    batchSize = 16
+    batchSize = 32
     train_dl = DataLoader(train_ds, batch_size=batchSize, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size=batchSize)  # SHUFFLE FALSE LEBO VALIDACNE
     test_dl = DataLoader(test_ds, batch_size=batchSize)  # SHUFLLE FALSE LEBO TESTOVACIE
@@ -120,7 +120,8 @@ if __name__ == '__main__':
     model = MLP(X_train.shape[1])
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.006, weight_decay=0.008)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10, verbose=False)
 
     trainLosses = []
     validationLosses = []
@@ -169,6 +170,8 @@ if __name__ == '__main__':
         validationAccuracies.append(val_acc)
 
         print(f"Epoch {epoch + 1}, Train Loss: {avgTrainLoss:.4f}, Val Acc: {val_acc:.2f}")
+
+        scheduler.step(avgValidationLoss)
 
         # --------------------------- #
         #        EARLY STOPPING       #

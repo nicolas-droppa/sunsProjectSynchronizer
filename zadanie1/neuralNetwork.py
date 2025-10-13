@@ -7,15 +7,13 @@ class MLP(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(input_dim, 32),
             nn.ReLU(),
-            nn.Linear(32, 16),
+            nn.Linear(32, 12),
             nn.ReLU(),
-            nn.Linear(16, 8),
+            nn.Linear(12, 8),
             nn.ReLU(),
-            nn.Linear(8, 4),
+            nn.Linear(8, 6),
             nn.ReLU(),
-            nn.Linear(4, 3),
-            nn.ReLU(),
-            nn.Linear(3, 2),
+            nn.Linear(6, 2),
         )
 
     def forward(self, x):
