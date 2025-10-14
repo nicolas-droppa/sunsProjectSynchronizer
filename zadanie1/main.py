@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     x_train, x_temp, y_train, y_temp = train_test_split(x, y, test_size=0.1, stratify=y,
                                                         random_state=42)
-    x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.3, stratify=y_temp,
+    x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.5, stratify=y_temp,
                                                     random_state=42)
 
     scaler = StandardScaler()
@@ -120,19 +120,20 @@ if __name__ == '__main__':
     model = MLP(X_train.shape[1])
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.006, weight_decay=0.008)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10, verbose=False)
+    #optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.008)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10, verbose=False)
 
     trainLosses = []
     validationLosses = []
     trainAccuracies = []
     validationAccuracies = []
 
-    earlyStoppingPatience = 25
+    earlyStoppingPatience = 20
     bestValidationLoss = float("inf")
     epochsWithNoImprovement = 0
 
-    for epoch in range(200):
+    for epoch in range(100):
         model.train()
         totalTrainLoss = 0
         correctTrain, totalTrain = 0, 0
@@ -171,7 +172,7 @@ if __name__ == '__main__':
 
         print(f"Epoch {epoch + 1}, Train Loss: {avgTrainLoss:.4f}, Val Acc: {val_acc:.2f}")
 
-        scheduler.step(avgValidationLoss)
+        #scheduler.step(avgValidationLoss)
 
         # --------------------------- #
         #        EARLY STOPPING       #
