@@ -1,271 +1,105 @@
-from allowedData import *
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from dataUtilities import *
+from grapthUtilities import *
+from utilities import *
+from neuralNetwork import MLP
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from torch.utils.data import TensorDataset, DataLoader
-
-
-def checkForCuda():
-    """
-    Checks for torch version and whether CUDA is available
-    """
-    print("Torch version:", torch.__version__)
-    print("Device:", "cuda" if torch.cuda.is_available() else "cpu")
-
-
-def loadDataset(csvPath, showInfo=False):
-    """
-    Loads dataset from the specified CSV file
-    Args:
-        csvPath (string): path to the CSV file
-        showInfo (bool): prints debug information
-    Returns:
-        data (pandas DataFrame): Loaded dataset
-    """
-    try:
-        loadedData = pd.read_csv(csvPath, sep=';')
-
-        if showInfo:
-            print("Loaded data:")
-            print(loadedData.head())
-            print("\nColumn types:\n", loadedData.dtypes)
-
-        return loadedData
-    except FileNotFoundError:
-        print(f"Could not find the file: {csvPath}")
-        return None
-
-
-def removeOutliers(loadedData, column, lowerThreshold=None, upperThreshold=None, allowedValues=None,
-                   showInfo=False):
-    """
-    Removes outliers from a column.
-    For numeric columns: keep values within lowerThreshold and upperThreshold
-    For non-numeric columns: keep values in allowedValues list
-
-    Args:
-        loadedData (pd.DataFrame): original data
-        column (str): column name to check
-        lowerThreshold (float, optional): minimum allowed value
-        upperThreshold (float, optional): maximum allowed value
-        allowedValues (list, optional): list of allowed values
-        showInfo (bool): prints removed values and count
-
-    Returns:
-        data (pandas DataFrame): cleaned data
-    """
-    mask = pd.Series(True, index=loadedData.index)
-
-    if lowerThreshold is not None:
-        mask &= loadedData[column] >= lowerThreshold
-    if upperThreshold is not None:
-        mask &= loadedData[column] <= upperThreshold
-    if allowedValues is not None:
-        mask &= loadedData[column].isin(allowedValues)
-
-    count_removed = (~mask).sum()
-
-    if showInfo:
-        # True: keep, False: removed
-        removed_rows = loadedData.index[~mask]
-        for i in removed_rows:
-            print(f"Removed outlier at row {i}, column '{column}': {loadedData.at[i, column]}")
-        print(f"Total outliers removed in column '{column}': {count_removed}")
-
-    cleanedData = loadedData[mask].copy()
-    return cleanedData
-
-
-def preprocessDataset(loadedData, showInfo=False):
-    """
-    Preprocesses data
-    Args:
-        loadedData (pd.DataFrame): Loaded data
-        showInfo (bool): Print debug info after processing
-    Returns:
-        x (pd.DataFrame): Processed feature matrix
-        y (pd.Series): Processed target vector
-    """
-    y = loadedData['subscribed'].copy()
-    y = y.map({'no': 0, 'yes': 1})
-
-    x = loadedData.drop(columns=['subscribed'])
-
-    columns = x.select_dtypes(include=['object']).columns
-    for column in columns:
-        le = LabelEncoder()
-        x[column] = le.fit_transform(x[column])
-
-    if showInfo:
-        print("\nColumn data types:")
-        print(x.dtypes)
-        print("\nTarget value counts:")
-        print(y.value_counts())
-        print("\nNaN values after preprocessing:")
-        print(x.isna().sum())
-
-    return x, y
-
-
-def dropColumnsWithTooManyNaN(dataUncleaned, threshold, showInfo=False):
-    """
-    Removes columns from DataSet that have more than threshold of NaN values.
-    Args:
-        dataUncleaned (pd.DataFrame): input data
-        threshold (float): fraction of NaN above which column will be dropped
-        showInfo (bool): whether to print removed columns
-
-    Returns:
-        cleaned data
-    """
-    ColumnDropCount = []
-
-    for col in dataUncleaned.columns:
-        nan_count = dataUncleaned[col].isna().sum()
-        nan_fraction = nan_count / len(dataUncleaned)
-
-        if nan_fraction > threshold:
-            ColumnDropCount.append(col)
-            if showInfo:
-                print(f"Dropping column '{col}' with {nan_count} NaN values ({nan_fraction:.2%})")
-
-    return dataUncleaned.drop(columns=ColumnDropCount)
-
-
-def removeOutliersWrapper(dataUncleaned, showInfo=False):
-    """
-    Wrapper for removeOutliers
-    Args:
-        dataUncleaned (pd.DataFrame): Uncleaned data
-        showInfo (bool): Print debug info after processing
-    Returns:
-        Cleaned data
-    """
-    columnsToClean = [
-        ('age', {'lowerThreshold': 18, 'upperThreshold': 100}),
-        ('job', {'allowedValues': allowedJobs}),
-        ('marital', {'allowedValues': allowedMarital}),
-        ('education', {'allowedValues': allowedEducation}),
-        ('default', {'allowedValues': allowedDefault}),
-        ('housing', {'allowedValues': allowedHousing}),
-        ('loan', {'allowedValues': allowedLoan}),
-        ('contact', {'allowedValues': allowedContact}),
-        ('month', {'allowedValues': allowedMonth}),
-        ('day_of_week', {'allowedValues': allowedDayOfWeek}),
-        ('duration', {'lowerThreshold': 0, 'upperThreshold': float('inf')}),
-        ('campaign', {'lowerThreshold': 0, 'upperThreshold': float('inf')}),
-        ('pdays', {'lowerThreshold': 0, 'upperThreshold': float('inf')}),
-        ('previous', {'lowerThreshold': 0, 'upperThreshold': float('inf')}),
-        ('poutcome', {'allowedValues': allowedPoutcome}),
-        ('emp.var.rate', {'lowerThreshold': -1000, 'upperThreshold': 1000}),
-        ('cons.price.idx', {'lowerThreshold': 0, 'upperThreshold': 1000}),
-        ('cons.conf.idx', {'lowerThreshold': -1000, 'upperThreshold': 0}),
-        ('euribor3m', {'lowerThreshold': 0, 'upperThreshold': 100}),
-        ('nr.employed', {'lowerThreshold': 1000, 'upperThreshold': 100000}),
-        ('subscribed', {'allowedValues': allowedSubscribe})
-    ]
-
-    for columnName, params in columnsToClean:
-        if columnName in dataUncleaned.columns:
-            dataUncleaned = removeOutliers(dataUncleaned, columnName, showInfo=showInfo, **params)
-        elif showInfo:
-            print(f"Column '{columnName}' does not exist, skipping...")
-
-    return dataUncleaned
-
-
-def removeColumn(dataUncleaned, columnName, showInfo=False):
-    """
-    Remove a single column from the dataset
-    Args:
-        dataUncleaned (pd.DataFrame): Uncleaned data
-        columnName (str): Name of column to be removed
-        showInfo (bool): Print debug info
-    Returns:
-        pd.DataFrame: Cleaned data
-    """
-    newData = dataUncleaned.copy()
-
-    if columnName in newData.columns:
-        newData.drop(columns=[columnName], inplace=True)
-        if showInfo:
-            print(f"Column '{columnName}' was dropped by choice.")
-    else:
-        if showInfo:
-            print(f"Column '{columnName}' does not exist, skipping...")
-
-    return newData
-
-
-def getDataCount(dataToCount, showInfo=False):
-    """
-    Returns number of rows and columns in dataset
-    Args:
-        dataToCount (pd.DataFrame): Dataset
-        showInfo (bool): Print debug info
-
-    Returns:
-        tuple: (num_rows, num_columns)
-    """
-    rows, cols = dataToCount.shape
-    if showInfo:
-        print(f"Dataset has [{rows}] rows and [{cols}] columns.")
-    return rows, cols
-
-
-class MLP(nn.Module):
-    def __init__(self):
-        super().__init__()
-        input_dim = X_train.shape[1]
-
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 16),
-            nn.ReLU(),
-            nn.Linear(16, 12),
-            nn.ReLU(),
-            nn.Linear(12, 8),
-            nn.ReLU(),
-            nn.Linear(8, 4),
-            nn.ReLU(),
-            nn.Linear(4, 2),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix
 
 if __name__ == '__main__':
-    # checkForCuda()
-
     data = loadDataset("zadanie1-data.csv", showInfo=False)
 
     if data is None:
-        print(f"\nData not loaded, exiting...")
+        print("\nData not loaded, exiting...")
         exit(1)
 
-    data = removeColumn(data, "duration", showInfo=True)
-    data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=True)
-    data = removeOutliersWrapper(data, showInfo=True)
+    showDatasetOverview(data, showInfo=False)
+    showCorrelationMatrix(data, showInfo=False)
 
-    dataRows, dataColumns = getDataCount(data, showInfo=True)
+    #showDependencyGraph(data, "job", "duration", agg="mean")
+    #showBoxRelation(data, "emp.var.rate", "euribor3m")
+    #showScatterRelation(data, "emp.var.rate", "nr.employed", hue="subscribed")
+    #showHeatmapRelation(data, "emp.var.rate", "cons.price.idx")
+    #showLineRelation(data, "emp.var.rate", "pdays", agg="mean")
 
-    #printColumnNames(data, showInfo=True)
+    numericColumns = ['age', 'duration', 'campaign', 'pdays', 'previous', 'emp.var.rate', 'cons.price.idx',
+                      'cons.conf.idx', 'euribor3m', 'nr.employed']
+    showBoxplotWrapper(data, numericColumns, showInfo=False)
 
-    x, y = preprocessDataset(data, showInfo=True)
+    categoricalColumns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month',
+                          'day_of_week', 'poutcome', 'subscribed']
+    showCategoricalWrapper(data, categoricalColumns, showInfo=False)
 
-    scaler = StandardScaler()
+    showHistogramWrapper(data, numericColumns, showInfo=False)
+
+    data = removeColumn(data, "duration", showInfo=False)
+    data = removeColumn(data, "nr.employed", showInfo=False)
+    data = dropColumnsWithTooManyNaN(data, threshold=0.25, showInfo=False)
+    data = removeOutliersWrapper(data, showInfo=False)
+    #data = removeOutliersIQRWrapper(data, numericColumns, showInfo=False)
+    data = removeOutliersIQR(data, "cons.price.idx", showInfo=False)
+
+    x, y = preprocessDataset(data, showInfo=False)
+
+    # # # histograms after scaling
+    # currentColumns = x.columns
+    """
+    scaler = StandardScaler()+
     X = scaler.fit_transform(x)
 
+    #showCorrelationMatrix(data, showInfo=True)
+
+    # # # histograms after scaling
+    # X_df = pd.DataFrame(X, columns=currentColumns)
+    # showHistogramWrapper(X_df, currentColumns, showInfo=True)
+
     X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.1, random_state=42, stratify=y
+        X, y, test_size=0.3, random_state=42, stratify=y    
     )
     X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.4, random_state=42, stratify=y_temp
+        X_temp, y_temp, test_size=0.2, random_state=42, stratify=y_temp
     )
+    """
+
+    x_train, x_temp, y_train, y_temp = train_test_split(x, y, test_size=0.1, stratify=y,
+                                                        random_state=42)
+    x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.5, stratify=y_temp,
+                                                    random_state=42)
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(x_train)
+    X_val = scaler.transform(x_val)
+    X_test = scaler.transform(x_test)
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    #                       SKLEARN MODEL                       #
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    """
+    model = LogisticRegression(max_iter=1000, solver="lbfgs")
+    # model = LogisticRegression(max_iter=1000, solver="lbfgs", class_weight='balanced')
+    model.fit(X_train, y_train)
+
+    val_preds = model.predict(X_val)
+    val_acc = accuracy_score(y_val, val_preds)
+    print(f"Validation Accuracy: {val_acc:.2f}")
+
+    train_preds = model.predict(X_train)
+    train_acc = accuracy_score(y_train, train_preds)
+    print(f"Training Accuracy: {train_acc:.2f}")
+
+    test_preds = model.predict(X_test)
+    test_acc = accuracy_score(y_test, test_preds)
+    print(f"Test Accuracy: {test_acc:.2f}")
+
+    drawConfusionMatrix(y_test, test_preds, title="Test Set")
+    drawConfusionMatrix(y_train, train_preds, title="Train Set")
+    """
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    #                     PERCEPTRON MODEL                      #
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     X_train = torch.tensor(X_train, dtype=torch.float32)
     X_val = torch.tensor(X_val, dtype=torch.float32)
@@ -278,45 +112,110 @@ if __name__ == '__main__':
     val_ds = TensorDataset(X_val, y_val)
     test_ds = TensorDataset(X_test, y_test)
 
-    train_dl = DataLoader(train_ds, batch_size=32, shuffle=True)
-    val_dl = DataLoader(val_ds, batch_size=32)  # SHUFFLE FALSE LEBO VALIDACNE
-    test_dl = DataLoader(test_ds, batch_size=32)  # SHUFLLE FALSE LEBO TESTOVACIE
+    batchSize = 32
+    train_dl = DataLoader(train_ds, batch_size=batchSize, shuffle=True)
+    val_dl = DataLoader(val_ds, batch_size=batchSize)  # SHUFFLE FALSE LEBO VALIDACNE
+    test_dl = DataLoader(test_ds, batch_size=batchSize)  # SHUFLLE FALSE LEBO TESTOVACIE
 
-    model = MLP()
+    model = MLP(X_train.shape[1])
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    #optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.008)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10, verbose=False)
 
-    for epoch in range(50):
+    trainLosses = []
+    validationLosses = []
+    trainAccuracies = []
+    validationAccuracies = []
+
+    earlyStoppingPatience = 20
+    bestValidationLoss = float("inf")
+    epochsWithNoImprovement = 0
+
+    for epoch in range(100):
         model.train()
+        totalTrainLoss = 0
+        correctTrain, totalTrain = 0, 0
         for xb, yb in train_dl:
             optimizer.zero_grad()
             preds = model(xb)
             loss = criterion(preds, yb)
             loss.backward()
             optimizer.step()
+            totalTrainLoss += loss.item()
+
+            predicted = torch.argmax(preds, dim=1)
+            correctTrain += (predicted == yb).sum().item()
+            totalTrain += yb.size(0)
+
+        avgTrainLoss = totalTrainLoss / len(train_dl)
+        trainLosses.append(avgTrainLoss)
+        trainAccuracies.append(correctTrain / totalTrain)
 
         model.eval()
-        correct, total = 0, 0
+        totalValidationLoss = 0
+        correctValidation, totalValidation = 0, 0
         with torch.no_grad():
             for xb, yb in val_dl:
                 preds = model(xb)
+                loss = criterion(preds, yb)
+                totalValidationLoss += loss.item()
                 predicted = torch.argmax(preds, dim=1)
-                correct += (predicted == yb).sum().item()
-                total += yb.size(0)
+                correctValidation += (predicted == yb).sum().item()
+                totalValidation += yb.size(0)
 
-        val_acc = correct / total
-        print(f"Epoch {epoch + 1}, Train Loss: {loss.item():.4f}, Val Acc: {val_acc:.2f}")
+        avgValidationLoss = totalValidationLoss / len(val_dl)
+        validationLosses.append(avgValidationLoss)
+        val_acc = correctValidation / totalValidation
+        validationAccuracies.append(val_acc)
+
+        print(f"Epoch {epoch + 1}, Train Loss: {avgTrainLoss:.4f}, Val Acc: {val_acc:.2f}")
+
+        #scheduler.step(avgValidationLoss)
+
+        # --------------------------- #
+        #        EARLY STOPPING       #
+        # --------------------------- #
+        if avgValidationLoss < bestValidationLoss:
+            bestValidationLoss = avgValidationLoss
+            epochsWithNoImprovement = 0
+            bestModelState = model.state_dict()
+        else:
+            epochsWithNoImprovement = epochsWithNoImprovement + 1
+            if epochsWithNoImprovement >= earlyStoppingPatience:
+                print(f"\nEarly stopping after {epoch + 1} epochs!")
+                model.load_state_dict(bestModelState)
+                break
+
+    showTrainingValidationAccuracy(trainAccuracies, validationAccuracies)
+    showTrainingValidationLoss(trainLosses, validationLosses)
 
     model.eval()
-    correct, total = 0, 0
+
+    correct_train, total_train = 0, 0
+    with torch.no_grad():
+        for xb, yb in train_dl:
+            preds = model(xb)
+            predicted = torch.argmax(preds, dim=1)
+            correct_train += (predicted == yb).sum().item()
+            total_train += yb.size(0)
+    train_acc = correct_train / total_train
+
+    correct, total_test = 0, 0
     with torch.no_grad():
         for xb, yb in test_dl:
             preds = model(xb)
             predicted = torch.argmax(preds, dim=1)
             correct += (predicted == yb).sum().item()
-            total += yb.size(0)
+            total_test += yb.size(0)
+    test_acc = correct / total_test
 
-    test_acc = correct / total
-    print(f"\nFinal Test Accuracy: {test_acc:.2f}")
+    print(f"\nFinal Train Accuracy: {train_acc:.3f}")
+    print(f"\nFinal Test Accuracy: {test_acc:.3f}")
 
+    y_test_true, y_test_pred = getPredictionsAndLabels(model, test_dl)
+    y_train_true, y_train_pred = getPredictionsAndLabels(model, train_dl)
+
+    drawConfusionMatrix(y_test_true, y_test_pred, title="Test Set")
+    drawConfusionMatrix(y_train_true, y_train_pred, title="Train Set")
