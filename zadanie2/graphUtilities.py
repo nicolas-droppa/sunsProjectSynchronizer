@@ -5,21 +5,76 @@ from matplotlib.colors import LinearSegmentedColormap
 
 from sklearn.tree import plot_tree
 
+import numpy as np
+
+
+def plotFeatureImportances(model, feature_names, topColumnCount=None, figsize=(10,6)):
+    """
+    Plots feature importances
+    Args:
+        model: trained model with feature_importances_ attribute
+        feature_names: list of feature names corresponding to columns
+        top_n: number of top features to display (default: all)
+        figsize: tuple for figure size
+    """
+    importances = model.feature_importances_
+    importance_df = pd.DataFrame({
+        'Feature': feature_names,
+        'Importance': importances
+    }).sort_values(by='Importance', ascending=False)
+
+    if topColumnCount is not None:
+        importance_df = importance_df.head(topColumnCount)
+
+    plt.figure(figsize=figsize)
+    plt.barh(importance_df['Feature'][::-1], importance_df['Importance'][::-1], color='skyblue')
+    plt.xlabel("Importance")
+    plt.title("Feature Importances")
+    plt.tight_layout()
+    plt.show()
+
+
+def showResiduals(y_true, y_pred):
+    """
+    Plots residuals for a regression model.
+    Residuals are predicted - actual values
+    Args:
+        y_true: True target values
+        y_pred: Predicted target values from the model
+    """
+    residuals = y_pred - y_true
+    plt.figure(figsize=(8, 5))
+    scatter = plt.scatter(
+        y_true,
+        residuals,
+        s=10,
+        c=np.abs(residuals),
+        cmap='coolwarm',
+        alpha=0.7
+    )
+    plt.axhline(y=0, color='r', linestyle='--')
+    plt.xlabel("Actual Values")
+    plt.ylabel("Residuals (Predicted - Actual)")
+    plt.title("Residuals Plot Colored by Distance")
+    plt.colorbar(scatter, label="Absolute Residual")
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.show()
+
+
 
 def showPredictionComparison(y_true, y_pred):
     """
     Shows prediction comparison plot
-
     Args:
-        y_true: real values
+        y_true: true values
         y_pred: predicted values
     """
     plt.figure(figsize=(8, 6))
     plt.scatter(y_true, y_pred, alpha=0.6, color="skyblue", edgecolor="black")
     plt.plot([min(y_true), max(y_true)], [min(y_true), max(y_true)], 'r--')
-    plt.xlabel("Real values")
+    plt.xlabel("Trie values")
     plt.ylabel("Predicted values")
-    plt.title("Real vs Predicted Comparison")
+    plt.title("True vs Predicted Comparison")
     plt.tight_layout()
     plt.show()
 
@@ -27,7 +82,6 @@ def showPredictionComparison(y_true, y_pred):
 def showDecisionTree(clf, feature_names=None):
     """
     Draws a decision tree for a classifier.
-
     Args:
         clf: Fitted DecisionTree model
     """
