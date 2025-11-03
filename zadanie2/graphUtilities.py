@@ -3,6 +3,47 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
+from sklearn.tree import plot_tree
+
+
+def showPredictionComparison(y_true, y_pred):
+    """
+    Shows prediction comparison plot
+
+    Args:
+        y_true: real values
+        y_pred: predicted values
+    """
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y_true, y_pred, alpha=0.6, color="skyblue", edgecolor="black")
+    plt.plot([min(y_true), max(y_true)], [min(y_true), max(y_true)], 'r--')
+    plt.xlabel("Real values")
+    plt.ylabel("Predicted values")
+    plt.title("Real vs Predicted Comparison")
+    plt.tight_layout()
+    plt.show()
+
+
+def showDecisionTree(clf, feature_names=None):
+    """
+    Draws a decision tree for a classifier.
+
+    Args:
+        clf: Fitted DecisionTree model
+    """
+    plt.figure(figsize=(16, 10))
+    plot_tree(
+        clf,
+        feature_names=feature_names,
+        filled=True,
+        rounded=True,
+        proportion=True,
+        impurity=True
+    )
+    plt.title("Decision Tree Regression")
+    plt.tight_layout()
+    plt.show()
+
 
 def showBarChart(dataFrame, column, showInfo=False):
     """

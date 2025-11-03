@@ -1,4 +1,10 @@
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.tree import DecisionTreeRegressor
+
+from sklearn.ensemble import RandomForestRegressor
+
+import numpy as np
 
 from dataUtilities import *
 from graphUtilities import *
@@ -57,10 +63,27 @@ if __name__ == '__main__':
     )
 
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
-    print("Shape X_train:", X_train_scaled.shape)
-    print("Shape X_test:", X_test_scaled.shape)
-    print("Shape y_train:", y_train.shape)
-    print("Shape y_test:", y_test.shape)
+    # DECISION TREE REGRESSOR
+    """
+    clf = DecisionTreeRegressor(max_depth=3, min_samples_leaf=2, random_state=42)
+    clf.fit(X_train, y_train)
+
+    y_pred_train = clf.predict(X_train)
+    y_pred_test = clf.predict(X_test)
+
+    rmse_train = np.sqrt(mean_squared_error(y_train, y_pred_train))
+    rmse_test = np.sqrt(mean_squared_error(y_test, y_pred_test))
+
+    print("=== Train set ===")
+    print(f"R2: {r2_score(y_train, y_pred_train):.3f}")
+    print(f"RMSE: {rmse_train:.3f}\n")
+    print("=== Test set ===")
+    print(f"R2: {r2_score(y_test, y_pred_test):.3f}")
+    print(f"RMSE: {rmse_test:.3f}\n")
+
+    showPredictionComparison(y_test, y_pred_test)
+    showDecisionTree(clf, feature_names=list(X.columns))
+    """
