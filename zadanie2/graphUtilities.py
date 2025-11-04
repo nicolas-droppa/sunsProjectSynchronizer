@@ -8,7 +8,7 @@ from sklearn.tree import plot_tree
 import numpy as np
 
 
-def plotFeatureImportances(model, feature_names, topColumnCount=None, figsize=(10,6)):
+def plotFeatureImportances(model, feature_names, topColumnCount=None):
     """
     Plots feature importances
     Args:
@@ -26,7 +26,7 @@ def plotFeatureImportances(model, feature_names, topColumnCount=None, figsize=(1
     if topColumnCount is not None:
         importance_df = importance_df.head(topColumnCount)
 
-    plt.figure(figsize=figsize)
+    plt.figure(figsize=(10,6))
     plt.barh(importance_df['Feature'][::-1], importance_df['Importance'][::-1], color='skyblue')
     plt.xlabel("Importance")
     plt.title("Feature Importances")
@@ -53,13 +53,12 @@ def showResiduals(y_true, y_pred):
         alpha=0.7
     )
     plt.axhline(y=0, color='r', linestyle='--')
-    plt.xlabel("Actual Values")
-    plt.ylabel("Residuals (Predicted - Actual)")
-    plt.title("Residuals Plot Colored by Distance")
+    plt.xlabel("True Values")
+    plt.ylabel("Residuals")
+    plt.title("Residuals Plot")
     plt.colorbar(scatter, label="Absolute Residual")
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
-
 
 
 def showPredictionComparison(y_true, y_pred):
