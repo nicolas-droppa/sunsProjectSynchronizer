@@ -2,14 +2,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.ensemble import RandomForestRegressor
+
+from sklearn.decomposition import PCA
 
 import numpy as np
 
 from dataUtilities import *
 from graphUtilities import *
 from utilities import dropColumns
+
+import plotly.express as px
 
 #checkForCuda()
 
@@ -38,6 +44,7 @@ if __name__ == '__main__':
         data['weekday_sin'] = np.sin(2 * np.pi * data['weekday'] / 7)
         data['weekday_cos'] = np.cos(2 * np.pi * data['weekday'] / 7)
         data = dropColumns(data, ['weekday'], True)
+
     # </editor-fold>
 
     # <editor-fold desc="EDA - graphs">
@@ -61,8 +68,16 @@ if __name__ == '__main__':
     """
     # </editor-fold>
 
+    """
+    data = dropColumns(data, ['weekday', 'weekday_sin', 'weekday_cos', 'holiday', 'workingday', 'weather',
+                              'humidity'], True)
+    """
+
     data = dropColumns(data, ['month'], True)
     data = encodeCategorical(data, 20, True)
+
+    data = dropColumns(data, ['weather_sin', 'weather_cos', 'weather_clear', 'weather_cloudy',
+                              'weather_heavy rain/snow', 'windspeed'], True)
 
     X = data.drop(columns=['count'])
     y = data['count']
@@ -74,6 +89,8 @@ if __name__ == '__main__':
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
+
+    X_std = scaler.fit_transform(X)
 
     # <editor-fold desc="=== Decision Tree Regressor ===">
     """
@@ -101,7 +118,7 @@ if __name__ == '__main__':
     # </editor-fold>
 
     # <editor-fold desc="=== Ensemble - BAGGING ( RANDOM FOREST REGRESSOR ) ===">
-    """
+
     rf_model = RandomForestRegressor(
         n_estimators=100,
         max_depth=15,
@@ -134,11 +151,12 @@ if __name__ == '__main__':
         print(f"{row['Feature']:25} {row['Importance']:.6f}")
 
     plotFeatureImportances(rf_model, feature_names=list(X.columns), topColumnCount=10)
-    """
+
     # </editor-fold>
 
     # <editor-fold desc="=== Model SVM ===">
-    svm_model = SVR(kernel='rbf', C=100, gamma=0.5, epsilon=0.2)
+    """
+    svm_model = SVR(kernel='rbf', C=100, gamma=0.5, epsilon=0.1)
 
     # trénovanie modelu
     svm_model.fit(X_train, y_train)
@@ -162,4 +180,72 @@ if __name__ == '__main__':
     # zobrazenie reziduí a porovnania predikcií
     showResiduals(y_test, y_pred_test)
     showPredictionComparison(y_test, y_pred_test)
+    """
     # </editor-fold>
+
+    # <editor-fold desc="=== 3D Plot ===">
+    """
+    fig = px.scatter_3d(
+        data,
+        x='hour',
+        y='weekday',
+        z='temperature',
+        color='count',
+        color_continuous_scale='Viridis',
+        title='3D Scatter – Before Dimensionality Reduction',
+        opacity=0.8,
+        size_max=8
+    )
+
+    fig.update_traces(marker=dict(size=4))
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='Hour',
+            yaxis_title='Weekday',
+            zaxis_title='Temperature'
+        ),
+        margin=dict(l=0, r=0, b=0, t=40)
+    )
+
+    fig.show()
+    """
+    # </editor-fold>
+
+    # <editor-fold desc="=== Dimension reduction ===">
+    """
+    pca = PCA(n_components=3)
+    X_reduced = pca.fit_transform(X_std)
+
+    print("Explained variance ratio:", pca.explained_variance_ratio_)
+    print("Total variance explained:", np.sum(pca.explained_variance_ratio_))
+
+    fig = px.scatter_3d(
+        x=X_reduced[:, 0],
+        y=X_reduced[:, 1],
+        z=X_reduced[:, 2],
+        color=y,  # y je count
+        color_continuous_scale='Viridis',
+        title='3D Scatter – After PCA Reduction',
+        opacity=0.8
+    )
+    fig.show()
+    """
+    # </editor-fold>
+
+    # <editor-fold desc="=== PCA Data reduction ===">
+    pca = PCA(n_components=0.95)
+    X_reduced = pca.fit_transform(X_std)
+
+    print("Explained variance ratio:", pca.explained_variance_ratio_)
+    print("Total variance explained:", np.sum(pca.explained_variance_ratio_))
+
+    fig = px.scatter_3d(
+        x=X_reduced[:, 0],
+        y=X_reduced[:, 1],
+        z=X_reduced[:, 2],
+        color=y,  # y je count
+        color_continuous_scale='Viridis',
+        title='3D Scatter – After PCA Reduction',
+        opacity=0.8
+    )
+    fig.show()
