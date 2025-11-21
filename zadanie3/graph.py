@@ -30,3 +30,22 @@ def showCorrelationMatrix(dataFrame, showInfo=False):
         plt.title("Correlation Matrix for Numeric Columns")
         plt.tight_layout()
         plt.show()
+
+
+def showResiduals(Y_true, Y_pred, title="Residuals"):
+    residuals = Y_true - Y_pred
+    plt.figure(figsize=(12,5))
+
+    plt.subplot(1,2,1)
+    plt.scatter(Y_true, Y_pred)
+    plt.xlabel("Skutočné hodnoty")
+    plt.ylabel("Predikované hodnoty")
+    plt.title(f"Predikované vs Skutočné ({title})")
+
+    plt.subplot(1,2,2)
+    plt.scatter(Y_pred, residuals)
+    plt.xlabel("Predikované hodnoty")
+    plt.ylabel("Reziduály")
+    plt.title(f"Reziduály ({title})")
+
+    plt.show()
