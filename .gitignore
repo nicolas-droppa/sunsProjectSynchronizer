@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+
+# JetBrains
+.idea/
+
+# Data folders
+zadanie3/data/
+zadanie1/data/
+zadanie2/data/
+
+# Large files
+*.png
+*.jpg
+*.jpeg
+*.bmp
+
+# venv
+.venv/
