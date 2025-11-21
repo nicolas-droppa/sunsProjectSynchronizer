@@ -16,6 +16,8 @@ zadanie2/data/
 *.jpg
 *.jpeg
 *.bmp
+*.pt
+*.pth
 
 # venv
 .venv/
