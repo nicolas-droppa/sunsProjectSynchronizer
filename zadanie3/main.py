@@ -5,7 +5,7 @@ if __name__ == "__main__":
     # Creates dataCombined/ folder
     # with subfolder originals/
     # and combines all csvs into one -> out_data.csv
-    processSolarData("data", rebuildCombinedData=False, showInfo=False)
+    processSolarData("data", rebuildCombinedData=True, showInfo=False)
 
     counts = getDataCount(showInfo=False)
 
