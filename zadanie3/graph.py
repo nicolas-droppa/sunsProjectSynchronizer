@@ -31,21 +31,41 @@ def showCorrelationMatrix(dataFrame, showInfo=False):
         plt.tight_layout()
         plt.show()
 
+def showTrainingCurves(train_losses, val_losses, train_metrics, val_metrics):
+    epochs = range(1, len(train_losses) + 1)
+    plt.figure(figsize=(14, 5))
 
-def showResiduals(Y_true, Y_pred, title="Residuals"):
-    residuals = Y_true - Y_pred
-    plt.figure(figsize=(12,5))
+    # loss
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, train_losses, label="Train Loss")
+    plt.plot(epochs, val_losses, label="Val Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("MSE Loss")
+    plt.title("Loss (train vs val)")
+    plt.legend()
+    plt.grid(True)
 
-    plt.subplot(1,2,1)
-    plt.scatter(Y_true, Y_pred)
-    plt.xlabel("Skutočné hodnoty")
-    plt.ylabel("Predikované hodnoty")
-    plt.title(f"Predikované vs Skutočné ({title})")
+    # R2
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, train_metrics["R2"], label="Train R2")
+    plt.plot(epochs, val_metrics["R2"], label="Val R2")
+    plt.xlabel("Epoch")
+    plt.ylabel("R2")
+    plt.title("R2 (train vs val)")
+    plt.legend()
+    plt.grid(True)
 
-    plt.subplot(1,2,2)
-    plt.scatter(Y_pred, residuals)
-    plt.xlabel("Predikované hodnoty")
-    plt.ylabel("Reziduály")
-    plt.title(f"Reziduály ({title})")
+    plt.tight_layout()
+    plt.show()
 
+
+def showResiduals(y_true, y_pred, title="Residuals"):
+    resid = y_true - y_pred
+    plt.figure(figsize=(6, 4))
+    plt.scatter(y_pred, resid, s=8, alpha=0.6)
+    plt.axhline(0, color="red", linestyle="--")
+    plt.xlabel("Predicted")
+    plt.ylabel("Residual (True - Pred)")
+    plt.title(title)
+    plt.grid(True)
     plt.show()
