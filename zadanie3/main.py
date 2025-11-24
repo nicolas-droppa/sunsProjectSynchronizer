@@ -135,7 +135,7 @@ if __name__ == "__main__":
         exit(1)
 
     showDatasetOverview(data, showInfo=False)
-    getDataCount(data, showInfo=False)
+    getDataCount("dataCombined", showInfo=False)
 
     columnsToDrop = ["SunLatitude", "SunLongitude", "PressureTemp", "HumidityTemp",
                      "BodyTemperatureAvg", "SunAzimuth", "SunZenith"]
