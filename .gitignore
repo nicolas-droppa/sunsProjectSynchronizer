@@ -8,6 +8,7 @@ __pycache__/
 # Data folders
 zadanie3/data/
 zadanie3/dataCombined/
+zadanie3/checkpoints/
 zadanie1/data/
 zadanie2/data/
 
