@@ -5,7 +5,7 @@ class Config:
     # data
     csvPath: str = "dataCombined/out_data.csv"
     imgFolder: str = "dataCombined/originals"
-    imgSize: tuple = (32, 32)
+    imgSize: tuple = (128, 128)
     batchSize: int = 16
     numEpochs: int = 40
     valRatio: float = 0.1

@@ -16,20 +16,29 @@ class SimpleCNNRegressor(nn.Module):
 
         self.conv1 = convBlock(3, 32)
         self.pool1 = nn.MaxPool2d(2,2)
+
         self.conv2 = convBlock(32, 64)
         self.pool2 = nn.MaxPool2d(2,2)
-        self.conv3 = convBlock(64,128)
+
+        self.conv3 = convBlock(64, 128)
         self.pool3 = nn.MaxPool2d(2,2)
 
-        self.flattenDim = 128*4*4
+        # adaptíve pooling – always 4×4 output -> counter 128x128 bad traning
+        self.adaptPool = nn.AdaptiveAvgPool2d((4,4))
+
+        self.flattenDim = 128 * 4 * 4
+
         self.fc1 = nn.Linear(self.flattenDim, 256)
         self.dropout = nn.Dropout(p=dropoutP) if useDropout else nn.Identity()
-        self.fc2 = nn.Linear(256,1)
+        self.fc2 = nn.Linear(256, 1)
 
     def forward(self, x):
         x = self.pool1(self.conv1(x))
         x = self.pool2(self.conv2(x))
         x = self.pool3(self.conv3(x))
+
+        x = self.adaptPool(x)
+
         x = x.view(x.size(0), -1)
         x = F.relu(self.fc1(x))
         x = self.dropout(x)

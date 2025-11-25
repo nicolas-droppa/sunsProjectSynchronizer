@@ -11,6 +11,7 @@ from graph import showTrainingCurves, showResiduals
 from data import processSolarData, loadDataset, showDatasetOverview, getDataCount
 from dataset import SolarImageDataset
 from model import SimpleCNNRegressor
+from featureExtraction import runFeatureExtraction
 from train import trainOneEpoch, evaluate
 
 def runExperiment(cfg, imgPathsAll, targetsAll, hyperparamsName="default"):
@@ -144,6 +145,26 @@ if __name__ == "__main__":
 
     imgPathsAll = [os.path.join(cfg.imgFolder, os.path.basename(p)) for p in data["PictureName"].values]
     targetsAll = data["Irradiance"].values.astype(np.float32)
+
+    # --------------------------------------------------------
+    # FEATURE EXTRACTION
+    # --------------------------------------------------------
+    features_path = "dataCombined/features.parquet"
+
+    if not os.path.exists(features_path):
+        print("\n=== Extracting features using MobileNetV2 ===")
+        df_features = runFeatureExtraction(cfg)
+        df_features.to_parquet(features_path)
+        print(f"Saved extracted features → {features_path}")
+    else:
+        print(f"Loading precomputed features from {features_path}")
+        import pandas as pd
+
+        df_features = pd.read_parquet(features_path)
+
+    print("Feature extraction ready.")
+    print(df_features.head())
+    exit(0)
 
     goodIdx = [i for i, p in enumerate(imgPathsAll) if os.path.exists(p)]
     imgPathsAll = [imgPathsAll[i] for i in goodIdx]
