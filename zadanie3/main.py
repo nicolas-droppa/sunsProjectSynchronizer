@@ -3,6 +3,8 @@ import torch
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from torchvision import transforms
 
 from config import Config
@@ -13,6 +15,7 @@ from dataset import SolarImageDataset
 from model import SimpleCNNRegressor
 from featureExtraction import runFeatureExtraction
 from train import trainOneEpoch, evaluate
+
 
 def runExperiment(cfg, imgPathsAll, targetsAll, hyperparamsName="default"):
     os.makedirs(cfg.checkpointDir, exist_ok=True)
@@ -164,6 +167,78 @@ if __name__ == "__main__":
 
     print("Feature extraction ready.")
     print(df_features.head())
+
+    # --------------------------------------------------------
+    # TRAINING WITH RANDOM FOREST ON FEATURES
+    # --------------------------------------------------------
+    print("\n=== Training Random Forest on extracted features ===")
+
+    cols_to_exclude = ["img_path",  "irradiance"]
+
+    X = df_features.drop(columns=cols_to_exclude).select_dtypes(include=['number']).astype("float32")
+    y = df_features["irradiance"].astype("float32")
+
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=cfg.valRatio + cfg.testRatio, random_state=cfg.seed
+    )
+    valFrac = cfg.valRatio / (cfg.valRatio + cfg.testRatio)
+
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=(1 - valFrac), random_state=cfg.seed
+    )
+
+    scaler = StandardScaler()
+    X_train_s = scaler.fit_transform(X_train)
+    X_val_s = scaler.transform(X_val)
+    X_test_s = scaler.transform(X_test)
+
+    clf = RandomForestRegressor(
+        n_estimators=300,
+        max_depth=18,
+        min_samples_leaf=2,
+        random_state=42,
+        n_jobs=-1
+    )
+
+    clf.fit(X_train_s, y_train)
+
+    y_train_pred = clf.predict(X_train_s)
+    y_val_pred = clf.predict(X_val_s)
+    y_test_pred = clf.predict(X_test_s)
+
+    train_metrics = {
+        "MSE": mean_squared_error(y_train, y_train_pred),
+        "MAE": mean_absolute_error(y_train, y_train_pred),
+        "RMSE": mean_squared_error(y_train, y_train_pred),
+        "R2": r2_score(y_train, y_train_pred),
+    }
+
+    test_metrics = {
+        "MSE": mean_squared_error(y_test, y_test_pred),
+        "MAE": mean_absolute_error(y_test, y_test_pred),
+        "RMSE": mean_squared_error(y_test, y_test_pred),
+        "R2": r2_score(y_test, y_test_pred),
+    }
+
+    print("\n=== Random Forest Results ===")
+    print("Train:", train_metrics)
+    print("Test:", test_metrics)
+
+    # Save into unified results table
+    summary = {
+        "hyperparams": "RandomForest",
+        "train_MSE": train_metrics["MSE"],
+        "train_MAE": train_metrics["MAE"],
+        "train_RMSE": train_metrics["RMSE"],
+        "train_R2": train_metrics["R2"],
+        "test_MSE": test_metrics["MSE"],
+        "test_MAE": test_metrics["MAE"],
+        "test_RMSE": test_metrics["RMSE"],
+        "test_R2": test_metrics["R2"]
+    }
+
+    saveResultsTable([summary], "results_forest.csv")
+    print("\nRandomForest experiment finished.")
     exit(0)
 
     goodIdx = [i for i, p in enumerate(imgPathsAll) if os.path.exists(p)]
