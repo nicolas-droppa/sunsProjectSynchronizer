@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     clf = RandomForestRegressor(
         n_estimators=300,
-        max_depth=18,
+        max_depth=12,
         min_samples_leaf=2,
         random_state=42,
         n_jobs=-1
@@ -206,19 +206,8 @@ if __name__ == "__main__":
     y_val_pred = clf.predict(X_val_s)
     y_test_pred = clf.predict(X_test_s)
 
-    train_metrics = {
-        "MSE": mean_squared_error(y_train, y_train_pred),
-        "MAE": mean_absolute_error(y_train, y_train_pred),
-        "RMSE": mean_squared_error(y_train, y_train_pred),
-        "R2": r2_score(y_train, y_train_pred),
-    }
-
-    test_metrics = {
-        "MSE": mean_squared_error(y_test, y_test_pred),
-        "MAE": mean_absolute_error(y_test, y_test_pred),
-        "RMSE": mean_squared_error(y_test, y_test_pred),
-        "R2": r2_score(y_test, y_test_pred),
-    }
+    train_metrics = computeMetrics(y_train, y_train_pred)
+    test_metrics = computeMetrics(y_test, y_test_pred)
 
     print("\n=== Random Forest Results ===")
     print("Train:", train_metrics)
