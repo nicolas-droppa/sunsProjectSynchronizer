@@ -31,6 +31,48 @@ def showCorrelationMatrix(dataFrame, showInfo=False):
         plt.tight_layout()
         plt.show()
 
+
+def showScatterPlot(df, x_col, y_col, showInfo=False):
+    """
+    Draws a scatter plot for two numeric DataFrame columns.
+
+    Args:
+        df (pd.DataFrame): Dataset
+        x_col (str): Column for X axis
+        y_col (str): Column for Y axis
+        showInfo (bool): Whether to show the plot
+    """
+    if showInfo:
+        plt.figure(figsize=(8, 6))
+        sns.scatterplot(data=df, x=x_col, y=y_col, s=20, alpha=0.6)
+        plt.title(f"Scatter Plot: {x_col} vs {y_col}")
+        plt.xlabel(x_col)
+        plt.ylabel(y_col)
+        plt.grid(alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+
+
+def showDistribution(df, col, showInfo=False):
+    """
+    Draws a histogram + KDE distribution plot for one numeric column.
+
+    Args:
+        df (pd.DataFrame): Dataset
+        col (str): Column to visualize
+        showInfo (bool): Whether to show the plot
+    """
+    if showInfo:
+        plt.figure(figsize=(8, 5))
+        sns.histplot(df[col], kde=True, bins=30, alpha=0.7)
+        plt.title(f"Distribution of {col}")
+        plt.xlabel(col)
+        plt.ylabel("Count")
+        plt.grid(alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+
+
 def showTrainingCurves(train_losses, val_losses, train_metrics, val_metrics):
     epochs = range(1, len(train_losses) + 1)
     plt.figure(figsize=(14, 5))

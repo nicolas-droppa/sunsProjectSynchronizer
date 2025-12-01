@@ -6,10 +6,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from torchvision import transforms
+import os
+import pandas as pd
 
 from config import Config
 from utils import setSeed, saveResultsTable, computeMetrics
-from graph import showTrainingCurves, showResiduals
+from graph import showTrainingCurves, showResiduals, showDistribution, showScatterPlot
 from data import processSolarData, loadDataset, showDatasetOverview, getDataCount
 from dataset import SolarImageDataset
 from model import SimpleCNNRegressor
@@ -141,6 +143,17 @@ if __name__ == "__main__":
     showDatasetOverview(data, showInfo=False)
     getDataCount("dataCombined", showInfo=False)
 
+    showScatterPlot(data, "BodyTemperature", "Irradiance", showInfo=True)
+    showScatterPlot(data, "FanSpeed", "Irradiance", showInfo=True)
+    showScatterPlot(data, "SunZenith", "Irradiance", showInfo=True)
+    showScatterPlot(data, "TiltAngleAvg", "Irradiance", showInfo=True)
+    showScatterPlot(data, "RelativeHumidity", "Irradiance", showInfo=True)
+    showDistribution(data, "Irradiance", showInfo=True)
+    showDistribution(data, "Pressure", showInfo=True)
+    showDistribution(data, "HeaterCurrent", showInfo=True)
+    showDistribution(data, "SunZenith", showInfo=True)
+    showDistribution(data, "SunAzimuth", showInfo=True)
+
     columnsToDrop = ["SunLatitude", "SunLongitude", "PressureTemp", "HumidityTemp",
                      "BodyTemperatureAvg", "SunAzimuth", "SunZenith"]
     columnsToDrop = [col for col in columnsToDrop if col in data.columns]
@@ -193,8 +206,8 @@ if __name__ == "__main__":
     X_test_s = scaler.transform(X_test)
 
     clf = RandomForestRegressor(
-        n_estimators=300,
-        max_depth=12,
+        n_estimators=500,
+        max_depth=23,
         min_samples_leaf=2,
         random_state=42,
         n_jobs=-1
@@ -225,6 +238,9 @@ if __name__ == "__main__":
         "test_RMSE": test_metrics["RMSE"],
         "test_R2": test_metrics["R2"]
     }
+
+    showResiduals(y_train, y_train_pred, title="Random Forest - Train Residuals")
+    showResiduals(y_test, y_test_pred, title="Random Forest - Test Residuals")
 
     saveResultsTable([summary], "results_forest.csv")
     print("\nRandomForest experiment finished.")
