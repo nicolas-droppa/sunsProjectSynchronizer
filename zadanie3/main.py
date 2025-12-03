@@ -15,6 +15,7 @@ from graph import showTrainingCurves, showResiduals, showDistribution, showScatt
 from data import processSolarData, loadDataset, showDatasetOverview, getDataCount
 from dataset import SolarImageDataset
 from model import SimpleCNNRegressor
+from visualize_filters import visualize_all
 from featureExtraction import runFeatureExtraction
 from train import trainOneEpoch, evaluate
 
@@ -143,6 +144,9 @@ if __name__ == "__main__":
     showDatasetOverview(data, showInfo=False)
     getDataCount("dataCombined", showInfo=False)
 
+    visualize_all()
+
+    """
     showScatterPlot(data, "BodyTemperature", "Irradiance", showInfo=True)
     showScatterPlot(data, "FanSpeed", "Irradiance", showInfo=True)
     showScatterPlot(data, "SunZenith", "Irradiance", showInfo=True)
@@ -153,6 +157,7 @@ if __name__ == "__main__":
     showDistribution(data, "HeaterCurrent", showInfo=True)
     showDistribution(data, "SunZenith", showInfo=True)
     showDistribution(data, "SunAzimuth", showInfo=True)
+    """
 
     columnsToDrop = ["SunLatitude", "SunLongitude", "PressureTemp", "HumidityTemp",
                      "BodyTemperatureAvg", "SunAzimuth", "SunZenith"]

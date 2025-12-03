@@ -17,7 +17,7 @@ def runFeatureExtraction(cfg, num_clusters=6, max_preview_imgs=25):
     print("\n=== Feature Extraction + Clustering ===")
 
     # -------------------------------
-    # Load dataset (same as your main)
+    # Load dataset
     # -------------------------------
     processSolarData("data", rebuildCombinedData=False, showInfo=False)
     data = loadDataset(cfg.csvPath, False)
