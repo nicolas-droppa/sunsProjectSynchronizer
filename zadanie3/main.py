@@ -15,9 +15,10 @@ from graph import showTrainingCurves, showResiduals, showDistribution, showScatt
 from data import processSolarData, loadDataset, showDatasetOverview, getDataCount
 from dataset import SolarImageDataset
 from model import SimpleCNNRegressor
-from visualize_filters import visualize_all
+from visualize_filters import visualizeAllConvFilters
 from featureExtraction import runFeatureExtraction
 from train import trainOneEpoch, evaluate
+from imageDataFusion import evalImageDataFusion
 
 
 def runExperiment(cfg, imgPathsAll, targetsAll, hyperparamsName="default"):
@@ -144,8 +145,6 @@ if __name__ == "__main__":
     showDatasetOverview(data, showInfo=False)
     getDataCount("dataCombined", showInfo=False)
 
-    visualize_all()
-
     """
     showScatterPlot(data, "BodyTemperature", "Irradiance", showInfo=True)
     showScatterPlot(data, "FanSpeed", "Irradiance", showInfo=True)
@@ -168,6 +167,11 @@ if __name__ == "__main__":
     targetsAll = data["Irradiance"].values.astype(np.float32)
 
     # --------------------------------------------------------
+    # CONV FILTERS VISUALIZATION
+    # --------------------------------------------------------
+    # visualizeAllConvFilters()
+
+    # --------------------------------------------------------
     # FEATURE EXTRACTION
     # --------------------------------------------------------
     features_path = "dataCombined/features.parquet"
@@ -185,6 +189,18 @@ if __name__ == "__main__":
 
     print("Feature extraction ready.")
     print(df_features.head())
+
+    # --------------------------------------------------------
+    # FUSION MODEL
+    # --------------------------------------------------------
+    print("\n=== Running Image + Table Data Fusion Model ===")
+
+    if "PictureName" not in df_features.columns:
+        print("Adding PictureName column to df_features...")
+        df_features = df_features.copy()
+        df_features["PictureName"] = data["PictureName"].values
+
+    train_m, test_m = evalImageDataFusion(data, df_features)
 
     # --------------------------------------------------------
     # TRAINING WITH RANDOM FOREST ON FEATURES

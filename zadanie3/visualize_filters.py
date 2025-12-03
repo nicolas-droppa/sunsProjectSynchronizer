@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from model import SimpleCNNRegressor
 
-def visualize_filters(layer, title="Filters"):
+def visualizeConvFilters(layer, title="Filters"):
     weights = layer.weight.data.cpu().numpy()
 
     out_channels, in_channels, H, W = weights.shape
@@ -41,9 +41,9 @@ def visualize_filters(layer, title="Filters"):
     plt.show()
 
 
-def visualize_all():
+def visualizeAllConvFilters():
     model = SimpleCNNRegressor()
     model.eval()
-    visualize_filters(model.conv1[0], "Conv1 Filters")
-    visualize_filters(model.conv2[0], "Conv2 Filters")
-    visualize_filters(model.conv3[0], "Conv3 Filters")
+    visualizeConvFilters(model.conv1[0], "Conv1 Filters")
+    visualizeConvFilters(model.conv2[0], "Conv2 Filters")
+    visualizeConvFilters(model.conv3[0], "Conv3 Filters")
